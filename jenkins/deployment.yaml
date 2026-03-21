@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jenkins-deployment
-  labels:
-    app: jenkins
 spec:
   replicas: 1 # รัน Pod พร้อมกัน 1 ตัว
   selector:
@@ -14,14 +12,18 @@ spec:
       labels:
         app: jenkins
     spec:
+      securityContext:
+        fsGroup: 1000 
+        runAsUser: 0
       containers:
-      - name: jenkins-container
-        image: jenkins/jenkins:lts
+      - name: jenkins
+        image: jenkins/jenkins:2.554-jdk21
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         volumeMounts:
-        - name: jenkins-volume
-          mountPath: /var/lib/jenkins/data
+        - mountPath: /var/jenkins_home
+          name: jenkinsdata
         resources: # กำหนดการใช้ Resource (วิศวกรที่ดีต้องใส่เสมอ)
           limits:
             cpu: "1000m"
@@ -30,6 +32,6 @@ spec:
             cpu: "500m"
             memory: "512Mi"
       volumes:
-      - name: jenkins-volume
+      - name: jenkinsdata
         persistentVolumeClaim:
           claimName: jenkins-volume-claim # ต้องตรงกับชื่อ PVC ที่เราสร้างไว้ใน jenkins-pvc.yaml (PVC)
